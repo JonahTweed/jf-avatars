@@ -1,4 +1,5 @@
 import aliases from "../data/search-aliases.json";
+import { enrichAvatar } from "./enrichment.js";
 
 // Decode filenames, split camel case/acronyms, fold accents and punctuation.
 export const normalize = (value) => {
@@ -40,10 +41,11 @@ const nameOf = (image) => {
 
 // One index per metadata array; caller retains it for the browser session.
 export const buildSearchIndex = (images) => images.map((image, order) => {
-  const name = normalize(nameOf(image));
-  const metadata = normalize(collectText(image).join(" "));
+  const enriched = enrichAvatar(image);
+  const name = normalize(nameOf(enriched));
+  const metadata = normalize(collectText(enriched).join(" "));
   const category = normalize([image.folder, image.category].filter(Boolean).join(" "));
-  const series = collectText({ franchise:image.franchise, series:image.series, show:image.show, title:image.title }).map(normalize);
+  const series = collectText({ franchise:enriched.franchise, series:image.series, show:image.show, title:image.title }).map(normalize);
   const acronyms = series.flatMap(text => {
     const parts = words(text);
     return parts.length > 1 ? [parts.map(word => word[0]).join(""), parts.filter(word => !["the","of","a","and"].includes(word)).map(word => word[0]).join("")] : [];
