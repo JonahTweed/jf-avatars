@@ -1,3 +1,5 @@
+import { observeGalleryImages } from "./events.js";
+import { resetImageLoads } from "./preload.js";
 import { props } from "./props.js";
 import { setCssProperties } from "./style.js";
 import {
@@ -243,42 +245,64 @@ export const addImagesToGrid = async (
   if (!(imgGrid instanceof HTMLElement)) {
     throw new Error("imgGrid must be a valid HTML element.");
   }
-  showRippleLoader();
-
-  let allImage = [];
-
-  srcImages.forEach((img, idx) => {
-    let url = img?.url || img?.imageUrl || img?.link || img?.src;
-    allImage.push(createImage(url, idx));
+  const urls = srcImages.map(img => img.url || img.imageUrl || img.link || img.src).filter(Boolean);
+  const pinned = [getProfileImageUrl(), props.selectedImage?.src].filter(Boolean);
+  const key = JSON.stringify([urls, pinned]);
+  if (imgGrid._avatarKey === key) return;
+  imgGrid._avatarKey = key;
+  imgGrid._avatarObserver?.disconnect();
+  resetImageLoads();
+  setCssProperties(imgGrid, {
+    display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(100px, 1fr))",
+    gap: "10px", padding: "15px",
   });
-  // Add the selected image if it exists
-  if (props.selectedImage) {
-    allImage.unshift(
-      createImage(props.selectedImage.src, `selected-tmp`, true),
-    );
-  }
-
-  const profileImageUrl = getProfileImageUrl();
-
-  if (profileImageUrl) {
-    allImage.unshift(createImage(profileImageUrl, `selected`, true));
-  }
-
-  if (allImage.length > 0) {
-    setCssProperties(imgGrid, {
-      display: "grid",
-      gridTemplateColumns: "repeat(auto-fill, minmax(100px, 1fr))",
-      gap: "10px",
-      padding: "15px",
-    });
-    imgGrid.innerHTML = "";
-    allImage.forEach((image) => imgGrid.appendChild(image));
-  } else {
-    log("No more srcImages available.");
-  }
+  imgGrid.replaceChildren();
+  imgGrid.scrollTop = 0;
+  const all = [...new Set([...pinned, ...urls])];
+  let cursor = 0;
+  const more = document.createElement("button");
+  more.type = "button";
+  more.className = "raised emby-button";
+  more.textContent = "Load more avatars";
+  more.style.gridColumn = "1 / -1";
+  const appendPage = () => {
+    more.remove();
+    const fragment = document.createDocumentFragment();
+    const end = Math.min(cursor + 120, all.length);
+    for (;cursor<end;cursor++) fragment.appendChild(createImage(all[cursor], cursor, pinned.includes(all[cursor])));
+    imgGrid.appendChild(fragment);
+    if (cursor < all.length) imgGrid.appendChild(more);
+    if (imgGrid.isConnected) observeGalleryImages(imgGrid);
+  };
+  more.onclick = appendPage;
+  // Random selection covers every result, including pages not yet rendered.
+  imgGrid._avatarRandom = () => {
+    if (!all.length) return;
+    const url = all[Math.floor(Math.random()*all.length)];
+    let img = Array.from(imgGrid.querySelectorAll("img")).find(item => item.dataset.src === url);
+    if (!img) { img=createImage(url, "random"); imgGrid.prepend(img); observeGalleryImages(imgGrid); }
+    // Selection can be made before the lazy load finishes.
+    img.src=url;
+    toggleValidateButton(img);
+    img.scrollIntoView({behavior:"smooth",block:"center"});
+    img.classList.remove(`${props.prefix}-img-random-flash`);
+    void img.offsetWidth;
+    img.classList.add(`${props.prefix}-img-random-flash`);
+  };
+  appendPage();
 };
 
-export const loadSrcImages = async () => {
+const imageRequests = new Map();
+export const loadSrcImages = () => {
+  const source = props.getSrcImages();
+  if (!imageRequests.has(source)) imageRequests.set(source, loadSrcImagesUncached().then(data => {
+    if (!data.length) imageRequests.delete(source);
+    return data;
+  }));
+  return imageRequests.get(source);
+};
+
+const loadSrcImagesUncached = async () => {
   let pathCustom = props.getSrcImages();
 
   // Check if data is in localStorage
@@ -312,6 +336,7 @@ export const loadSrcImages = async () => {
   // Load data from URL
   try {
     const data = await tryLoadJson(pathCustom);
+    if (!Array.isArray(data)) throw new Error("Avatar metadata must be an array");
     log(`srcImages loaded ${data.length}`);
 
     const storageData = {
@@ -320,7 +345,7 @@ export const loadSrcImages = async () => {
       data,
     };
 
-    localStorage.setItem(storageKey, JSON.stringify(storageData));
+    try { localStorage.setItem(storageKey, JSON.stringify(storageData)); } catch (e) { log("Metadata cache unavailable", e); }
 
     return data;
   } catch (error) {
@@ -380,7 +405,15 @@ export const loadLanguage = async () => {
  * @param {string} url - The URL of the JSON file to load.
  * @returns {Promise<Object|null>} The loaded data if successful, null otherwise.
  */
-export const tryLoadJson = async (url, cache = "no-store") => {
+const jsonRequests = new Map();
+export const tryLoadJson = (url, cache = "no-store") => {
+  if (!jsonRequests.has(url)) jsonRequests.set(url, fetchJson(url, cache).then(data => {
+    if (data === null) jsonRequests.delete(url);
+    return data;
+  }));
+  return jsonRequests.get(url);
+};
+const fetchJson = async (url, cache) => {
   try {
     log(`Attempting to load: ${url}`);
     const response = await fetch(url, { cache });

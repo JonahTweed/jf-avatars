@@ -6,7 +6,7 @@ import { setCssProperties } from "./style.js";
  * Maximum number of concurrent image loads.
  * @constant {number}
  */
-const MAX_CONCURRENT_LOADS = 100;
+const MAX_CONCURRENT_LOADS = 6;
 
 /**
  * Whether to prioritize images visible in the viewport.
@@ -63,6 +63,8 @@ class ImageLoadQueue {
  * @type {ImageLoadQueue}
  */
 const imageQueue = new ImageLoadQueue(MAX_CONCURRENT_LOADS);
+let generation = 0;
+export const resetImageLoads = () => { generation++; imageQueue.queue.length = 0; };
 
 /**
  * Calculate loading priority based on image's viewport visibility.
@@ -90,13 +92,20 @@ export const calculateLoadPriority = (img) => {
  * @param {string} actualSrc - Actual image source URL.
  */
 export const loadImageWithPriority = (img, actualSrc) => {
+  if (img.dataset.avatarLoading) return;
+  img.dataset.avatarLoading = "true";
+  const currentGeneration = generation;
   const priority = calculateLoadPriority(img);
 
   imageQueue.add(() => {
+    if (currentGeneration !== generation || !img.isConnected) return Promise.resolve();
     return new Promise((resolve, reject) => {
       const image = new Image();
 
+      const timer = setTimeout(() => { image.onload = image.onerror = null; reject(new Error("Image load timed out")); }, 15000);
       image.onload = () => {
+        clearTimeout(timer);
+        if (currentGeneration !== generation || !img.isConnected) { resolve(); return; }
         img.src = actualSrc;
         img.classList.remove("blink");
         setCssProperties(img, { cursor: "pointer" });
@@ -105,6 +114,7 @@ export const loadImageWithPriority = (img, actualSrc) => {
       };
 
       image.onerror = () => {
+        clearTimeout(timer);
         log(`Image failed to load: ${actualSrc}`);
         img.remove();
         reject(new Error(`Failed to load image: ${actualSrc}`));

@@ -1,4 +1,4 @@
-import { applySearchAndFilters, eventListener } from "./events.js";
+import { eventListener } from "./events.js";
 import {
   addImagesToGrid,
   loadSrcImages,
@@ -73,6 +73,10 @@ export const createSearchBar = (domElement) => {
   searchDiv.appendChild(searchLabel);
   searchDiv.appendChild(searchInput);
 
+  const status = document.createElement("div");
+  status.id = `${props.prefix}-search-status`;
+  status.setAttribute("role", "status");
+  searchDiv.appendChild(status);
   domElement.appendChild(searchDiv);
 };
 
@@ -108,6 +112,7 @@ export const showRippleLoader = () => {
     alignItems: "center",
     justifyContent: "center",
   });
+  delete grid._avatarKey;
   grid.replaceChildren(loader);
   return loader;
 };
@@ -246,7 +251,11 @@ export const createGridContainer = () => {
  * @returns {void} - This function does not return anything. It directly modifies the DOM
  *  by adding a modal to the page, integrating an image grid and a title.
  */
+let openingModal = false;
 export const createModal = async () => {
+  if (openingModal || document.getElementById(`${props.prefix}-modal`)) return;
+  openingModal = true;
+  try {
   if (!props.getTitle()) {
     throw new Error(
       "The title of the modal must be defined in props.getTitle().",
@@ -294,22 +303,10 @@ export const createModal = async () => {
 
   let imgGrid = createGridContainer();
   content.appendChild(imgGrid);
-  // gen ranmdon filter option category
-  const categories = await tryLoadJson(props.getSrcCatImages());
-  const randomCategory =
-    categories[Math.floor(Math.random() * categories.length)];
-  log("Random category:", randomCategory);
-
-  srcImages = srcImages.filter((img) => {
-    let folder = img.folder;
-    return folder.toLowerCase().includes(randomCategory.toLowerCase());
-  });
-  log(
-    `Filtered images count for category "${randomCategory}":`,
-    srcImages.length,
-  );
+  // Start with all categories so search covers the entire library.
+  const initialCategory = props.getDefaultOptionLabel();
   addImagesToGrid(srcImages, imgGrid);
-  createFooter(content, randomCategory);
+  createFooter(content, initialCategory);
 
   modal.appendChild(content);
   let modalbackdrop = document.createElement("div");
@@ -319,7 +316,8 @@ export const createModal = async () => {
   document.body.appendChild(modal);
 
   adjustResponsive();
-  eventListener();
+  await eventListener();
+  } finally { openingModal = false; }
 };
 
 /**
@@ -366,7 +364,7 @@ export const createDropdown = (domElement, randomCategory) => {
   tryLoadJson(props.getSrcCatImages()).then((folders_names) => {
     const optionAll = props.getDefaultOptionLabel();
 
-    [optionAll, ...folders_names].forEach((item) => {
+    [optionAll, ...(folders_names || [])].forEach((item) => {
       const option = document.createElement("option");
       option.value = item;
       option.textContent = item;
@@ -431,6 +429,8 @@ export const createRandomBtn = (domElement) => {
       navigator.vibrate(500);
     }
 
+    const grid = document.getElementById(`${props.prefix}-grid-container`);
+    if (grid?._avatarRandom) { grid._avatarRandom(); return; }
     const images = document.querySelectorAll(
       `#${props.prefix}-grid-container > img`,
     );
