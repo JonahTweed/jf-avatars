@@ -24,6 +24,9 @@ jobs:
       - name: Build project
         run: npm run build
 
+      - name: Test production bundle and search
+        run: npm test
+
       - name: Move latest tag
         run: |
           git config user.name "GitHub Actions"
@@ -46,5 +49,5 @@ jobs:
 
       - name: Purge jsDelivr cache
         run: |
-          curl -fsSL "https://purge.jsdelivr.net/gh/kalibrado/jf-avatars@latest/dist/main.js" || true
-          curl -fsSL "https://purge.jsdelivr.net/gh/kalibrado/jf-avatars@latest/main.js" || true
+          curl -fsSL "https://purge.jsdelivr.net/gh/${{ github.repository }}@latest/dist/main.js" || true
+          curl -fsSL "https://purge.jsdelivr.net/gh/${{ github.repository }}@latest/main.js" || true

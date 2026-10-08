@@ -53,6 +53,9 @@ jobs:
       - name: Build project
         run: npm run build
 
+      - name: Test production bundle and search
+        run: npm test
+
       - name: Generate documentation
         run: npm run docs
 
@@ -61,7 +64,7 @@ jobs:
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
 
-          git add package.json package-lock.json
+          git add package.json package-lock.json main.js main.js.LICENSE.txt
           git commit -m "chore: release ${{ steps.version.outputs.tag }} [skip ci]" || true
           git push origin HEAD:main
 
@@ -90,7 +93,7 @@ jobs:
 
       - name: Purge jsDelivr cache
         run: |
-          curl -fsSL "https://purge.jsdelivr.net/gh/kalibrado/jf-avatars@${{ steps.version.outputs.tag }}/dist/main.js" || true
-          curl -fsSL "https://purge.jsdelivr.net/gh/kalibrado/jf-avatars@${{ steps.version.outputs.tag }}/main.js" || true
-          curl -fsSL "https://purge.jsdelivr.net/gh/kalibrado/jf-avatars@latest/dist/main.js" || true
-          curl -fsSL "https://purge.jsdelivr.net/gh/kalibrado/jf-avatars@latest/main.js" || true
+          curl -fsSL "https://purge.jsdelivr.net/gh/${{ github.repository }}@${{ steps.version.outputs.tag }}/dist/main.js" || true
+          curl -fsSL "https://purge.jsdelivr.net/gh/${{ github.repository }}@${{ steps.version.outputs.tag }}/main.js" || true
+          curl -fsSL "https://purge.jsdelivr.net/gh/${{ github.repository }}@latest/dist/main.js" || true
+          curl -fsSL "https://purge.jsdelivr.net/gh/${{ github.repository }}@latest/main.js" || true
