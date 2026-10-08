@@ -1,10 +1,10 @@
 # jf-avatars — built-in indexed search
 
-This fork adds fast metadata search across the entire catalogue, ranked character results, camel-case and punctuation normalization, partial/typo matching, configurable franchise aliases, and a debounced lazy gallery. [Search implementation and metadata limitations](SEARCH-NOTES.md).
+This fork adds fast metadata search across the entire catalogue, ranked character results, camel-case and punctuation normalization, partial/typo matching, configurable franchise aliases, and a debounced lazy gallery. Catalogue enrichment adds character/franchise information or descriptive tags to 2,257 images, including all 210 Disney avatars. See [ENRICHMENT-NOTES.md](ENRICHMENT-NOTES.md) for coverage and visual inference limitations. [Search implementation and metadata limitations](SEARCH-NOTES.md).
 
-**Disable the original JF-AVATARS entry and Avatar Search Enhancer before enabling this fork.** Keep the original selector disabled as a rollback backup. Use the pinned loader below, or copy [injector-loader.js](injector-loader.js).
+**Disable the original JF-AVATARS entry and Avatar Search Enhancer before enabling this fork.** Keep the original selector disabled as a rollback backup. [rollback-search-loader.js](rollback-search-loader.js) restores the earlier built-in search bundle if needed. Use the pinned loader below, or copy [injector-loader.js](injector-loader.js).
 
-Validated with 16 automated tests against the 2,699-avatar catalogue and a simulated Jellyfin page. Local build and tests passed; live Jellyfin installation validation remains necessary.
+Validated with 20 automated tests against the 2,699-avatar catalogue and a simulated Jellyfin page. Local build and tests passed; live Jellyfin installation validation remains necessary.
 
 ![Translation Status](https://img.shields.io/badge/translate-ready-brightgreen)
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/kalibrado/jf-avatars?color=blue)
@@ -45,8 +45,8 @@ JF-AVATARS
   if (window.__jfAvatarsLoader || window.__jfAvatarsInitialized) return;
   window.__jfAvatarsLoader = true;
   const urls = [
-    "https://cdn.jsdelivr.net/gh/JonahTweed/jf-avatars@a0719327e5527a1a2da14b8f30ce6262f687627a/main.js",
-    "https://fastly.jsdelivr.net/gh/JonahTweed/jf-avatars@a0719327e5527a1a2da14b8f30ce6262f687627a/main.js"
+    "https://cdn.jsdelivr.net/gh/JonahTweed/jf-avatars@09690c10cc44f5958f259afdbd45042dc0d7b2b8/main.js",
+    "https://fastly.jsdelivr.net/gh/JonahTweed/jf-avatars@09690c10cc44f5958f259afdbd45042dc0d7b2b8/main.js"
   ];
   const load = (index) => {
     if (index >= urls.length) {
@@ -56,7 +56,7 @@ JF-AVATARS
     }
     const script = document.createElement("script");
     script.src = urls[index];
-    script.integrity = "sha384-wnhnes4lMS8PvT8a6l303hZTgu6NHQ425H9SrP0lws4SecCfuFaGsd60m6c/6w/4";
+    script.integrity = "sha384-3IHvZbhNZYI68zwkanqt77C3I56T3TLBSziR9vvB1WIDBfni4MPqt3F5pUbw3aDo";
     script.crossOrigin = "anonymous";
     script.onload = () => console.info("[JF-AVATARS] Built-in search loaded");
     script.onerror = () => { script.remove(); load(index + 1); };

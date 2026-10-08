@@ -2,8 +2,8 @@
   if (window.__jfAvatarsLoader || window.__jfAvatarsInitialized) return;
   window.__jfAvatarsLoader = true;
   const urls = [
-    "https://cdn.jsdelivr.net/gh/JonahTweed/jf-avatars@09690c10cc44f5958f259afdbd45042dc0d7b2b8/main.js",
-    "https://fastly.jsdelivr.net/gh/JonahTweed/jf-avatars@09690c10cc44f5958f259afdbd45042dc0d7b2b8/main.js"
+    "https://cdn.jsdelivr.net/gh/JonahTweed/jf-avatars@a0719327e5527a1a2da14b8f30ce6262f687627a/main.js",
+    "https://fastly.jsdelivr.net/gh/JonahTweed/jf-avatars@a0719327e5527a1a2da14b8f30ce6262f687627a/main.js"
   ];
   const load = (index) => {
     if (index >= urls.length) {
@@ -13,7 +13,7 @@
     }
     const script = document.createElement("script");
     script.src = urls[index];
-    script.integrity = "sha384-3IHvZbhNZYI68zwkanqt77C3I56T3TLBSziR9vvB1WIDBfni4MPqt3F5pUbw3aDo";
+    script.integrity = "sha384-wnhnes4lMS8PvT8a6l303hZTgu6NHQ425H9SrP0lws4SecCfuFaGsd60m6c/6w/4";
     script.crossOrigin = "anonymous";
     script.onload = () => console.info("[JF-AVATARS] Built-in search loaded");
     script.onerror = () => { script.remove(); load(index + 1); };
