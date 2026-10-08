@@ -19,6 +19,17 @@ function setup(){
 }
 async function open(env){await wait(30);env.w.document.getElementById('jf-avatars-btn-show-modal').click();await wait(30);return env.w.document.getElementById('jf-avatars-grid-container');}
 function type(w,text){const input=w.document.getElementById('jf-avatars-search-input');input.value=text;input.dispatchEvent(new w.Event('input'));}
+test('production bundle: enriched searches use cached metadata without loading images',async()=>{
+ const e=setup();try{
+  e.w.localStorage.setItem('jf-avatars-srcImages',JSON.stringify({src:'https://raw.githubusercontent.com/kalibrado/js-avatars-images/refs/heads/main/images_metadata.json',timestamp:new Date().toISOString(),data:images}));
+  const grid=await open(e);const calls=e.requests.length;
+  for(const query of ['Star Wars','Jon Snow','Spyro','Darth Vader']){
+   type(e.w,query);await wait(220);assert.notEqual(grid.dataset.generatedFallback,'true',query);
+   assert.ok(grid.querySelectorAll('img').length>0,query);
+  }
+  assert.equal(e.requests.length,calls);assert.equal(e.getLoads(),0);
+ }finally{e.dom.window.close();}
+});
 test('production bundle: bounded gallery, debounced search, no repeated metadata fetch or eager preload',async()=>{
  const e=setup();try{
   const grid=await open(e);assert.ok(grid);assert.equal(grid.querySelectorAll('img').length,120);assert.equal(e.getLoads(),0);
