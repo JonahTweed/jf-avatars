@@ -23,7 +23,7 @@ Original MIT licence and attribution are retained. No image assets are copied or
 
 ## Metadata limitation
 
-Search cannot infer the actual pictured character from an opaque filename such as scale(49), a number, a hash, or an incorrectly assigned object label. Those entries remain browsable and searchable by available source/category data. Accurate character/franchise search needs metadata enrichment in the upstream image catalogue. This implementation does not fabricate those labels.
+The index now applies source-specific catalogue enrichment from `src/data/avatar-enrichment.json`. See [ENRICHMENT-NOTES.md](ENRICHMENT-NOTES.md) for coverage, visual inference limitations and correction instructions. Unknown characters are searchable by descriptive tags rather than guessed identities.
 
 ## Build and verify
 
@@ -40,15 +40,15 @@ The build emits dist/main.js and copies the identical production artifact to mai
 1. Keep your existing JF-AVATARS entry as a disabled rollback backup.
 2. Disable Avatar Search Enhancer.
 3. Create a new JavaScript Injector entry named JF-AVATARS Built-in Search.
-4. Paste the entire contents of injector-script.js into its Script field and enable it. This is the production bundle itself and does not require a hosted loader URL.
+4. Paste the contents of injector-loader.js into its Script field and enable it. Tick Requires authentication.
 5. Save, run JavaScript Injector Startup in Scheduled Tasks, then fully refresh Jellyfin.
-6. Open avatar selection and try Billy Butcher, The Boys, LOTR, ROP, Fallout, The Expanse, and Good Omens. The catalogue contains no identifiable Jon Snow or Spyro name, so those queries may show the labelled generated fallback.
+6. Open avatar selection and try Billy Butcher, The Boys, LOTR, ROP, Fallout, The Expanse, and Good Omens. Also try Star Wars, Darth Vader, Grogu, Jon Snow and Spyro; those now have enriched catalogue matches.
 
 Keep exactly one avatar-selector entry enabled. Do not retain the separate enhancer alongside this version.
 
 ## Hosted loader (after publishing)
 
-Once a fork is created and main.js is published, use a commit-pinned jsDelivr URL, with the same commit-pinned raw GitHub URL as fallback. Verify both URLs serve the built main.js bytes before enabling the new entry. Avoid @latest for the modified loader so rollback is deterministic. The fork is JonahTweed/jf-avatars. Use the verified commit-pinned loader in injector-loader.js once published.
+Once a fork is created and main.js is published, use a commit-pinned jsDelivr URL, with a second commit-pinned jsDelivr host as fallback. Verify both URLs serve the built main.js bytes before enabling the new entry. Avoid @latest for the modified loader so rollback is deterministic. The fork is JonahTweed/jf-avatars. Use the verified commit-pinned loader in injector-loader.js once published.
 
 ## Rollback
 
