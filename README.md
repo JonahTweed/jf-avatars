@@ -1,4 +1,10 @@
-# jf-avatars
+# jf-avatars — built-in indexed search
+
+This fork adds fast metadata search across the entire catalogue, ranked character results, camel-case and punctuation normalization, partial/typo matching, configurable franchise aliases, and a debounced lazy gallery. [Search implementation and metadata limitations](SEARCH-NOTES.md).
+
+**Disable the original JF-AVATARS entry and Avatar Search Enhancer before enabling this fork.** Keep the original selector disabled as a rollback backup. Use the pinned loader below, or copy [injector-loader.js](injector-loader.js).
+
+Validated with 16 automated tests against the 2,699-avatar catalogue and a simulated Jellyfin page. Local build and tests passed; live Jellyfin installation validation remains necessary.
 
 ![Translation Status](https://img.shields.io/badge/translate-ready-brightgreen)
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/kalibrado/jf-avatars?color=blue)
@@ -36,74 +42,28 @@ JF-AVATARS
 
 ```javascript
 (() => {
-  const CONFIG = {
-    primary: "https://cdn.jsdelivr.net/gh/kalibrado/jf-avatars@latest/main.js",
-    fallback: "https://raw.githubusercontent.com/kalibrado/jf-avatars/main/main.js",
-    timeout: 8000,
-    retries: 2,
-  };
-
-  console.log("[JF-AVATARS] injector booting...");
-
-  function loadScript(url, attempt = 0) {
-    return new Promise((resolve, reject) => {
-      const script = document.createElement("script");
-      script.type = "module";
-      script.defer = true;
-      script.src = url;
-
-      const timer = setTimeout(() => {
-        script.remove();
-        reject(new Error("Timeout loading: " + url));
-      }, CONFIG.timeout);
-
-      script.onload = () => {
-        clearTimeout(timer);
-        console.log("[JF-AVATARS] loaded:", url);
-        resolve();
-      };
-
-      script.onerror = () => {
-        clearTimeout(timer);
-        script.remove();
-        reject(new Error("Failed loading: " + url));
-      };
-
-      document.head.appendChild(script);
-    }).catch(async (err) => {
-      console.warn("[JF-AVATARS] error:", err.message);
-
-      if (attempt < CONFIG.retries) {
-        console.log(`[JF-AVATARS] retry ${attempt + 1}/${CONFIG.retries}`);
-        return loadScript(url, attempt + 1);
-      }
-
-      throw err;
-    });
-  }
-
-  function init() {
-    const start = async () => {
-      try {
-        await loadScript(CONFIG.primary);
-      } catch (e) {
-        console.warn("[JF-AVATARS] primary failed, fallback...");
-        try {
-          await loadScript(CONFIG.fallback);
-        } catch (e2) {
-          console.error("[JF-AVATARS] all sources failed:", e2);
-        }
-      }
-    };
-
-    if (document.readyState === "complete") {
-      start();
-    } else {
-      window.addEventListener("load", start);
+  if (window.__jfAvatarsLoader || window.__jfAvatarsInitialized) return;
+  window.__jfAvatarsLoader = true;
+  const urls = [
+    "https://cdn.jsdelivr.net/gh/JonahTweed/jf-avatars@a0719327e5527a1a2da14b8f30ce6262f687627a/main.js",
+    "https://fastly.jsdelivr.net/gh/JonahTweed/jf-avatars@a0719327e5527a1a2da14b8f30ce6262f687627a/main.js"
+  ];
+  const load = (index) => {
+    if (index >= urls.length) {
+      window.__jfAvatarsLoader = false;
+      console.error("[JF-AVATARS] Both bundle sources failed. Refresh to retry.");
+      return;
     }
-  }
-
-  init();
+    const script = document.createElement("script");
+    script.src = urls[index];
+    script.integrity = "sha384-wnhnes4lMS8PvT8a6l303hZTgu6NHQ425H9SrP0lws4SecCfuFaGsd60m6c/6w/4";
+    script.crossOrigin = "anonymous";
+    script.onload = () => console.info("[JF-AVATARS] Built-in search loaded");
+    script.onerror = () => { script.remove(); load(index + 1); };
+    document.head.appendChild(script);
+  };
+  if (document.head) load(0);
+  else document.addEventListener("DOMContentLoaded", () => load(0), { once: true });
 })();
 ```
 
